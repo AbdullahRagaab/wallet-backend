@@ -20,7 +20,7 @@
 // // last update in sha allah
 // app.use(
 //   cors({
-//     origin: process.env.CLIENT_URL || 'http://localhost:5173',
+//     origin: process.env.CLIENTURL || 'http://localhost:5173',
 //     credentials: true,
 //   }),
 // );
@@ -80,9 +80,9 @@ import errorHandler from './middleware/errorHandler.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-connectDB();
+// connectDB();
 
 // CORS
 app.use(
@@ -124,11 +124,27 @@ app.use('/api/admin', adminRoutes);
 // Error Handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server listening on port ${PORT}`);
+// });
 
 
+const startServer = async () => {
+  try {
+    console.log('Connecting to DB...');
+    await connectDB();
+    console.log('DB Connected!');
+
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('DB Connection Failed:', err);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 
 
