@@ -86,6 +86,13 @@
 
 
 
+
+
+
+
+
+
+
 // import express from 'express';
 // import cors from 'cors';
 // import dotenv from 'dotenv';
@@ -107,20 +114,20 @@
 // app.use(helmet());
 // app.use(morgan('dev'));
 
+// // Health (قبل أي حاجة)
+// app.get('/health', (req, res) => {
+//   res.status(200).json({ ok: true });
+// });
+
 // // Routes
 // app.use('/api/auth', authRoutes);
 // app.use('/api/wallet', walletRoutes);
 // app.use('/api/admin', adminRoutes);
 
-// // Health check
-// app.get('/health', (req, res) => {
-//   res.json({ ok: true });
-// });
-
 // // Port
-// const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 0;
 
-// // Start server **ONLY after DB connects**
+// // Start server
 // const startServer = async () => {
 //   try {
 //     console.log('Connecting to MongoDB...');
@@ -132,16 +139,14 @@
 //     });
 
 //   } catch (error) {
-//     console.error('Failed to start server:', error);
-//     process.exit(1);
+//     console.error('Failed to start server:', error.message);
 //   }
 // };
 
 // startServer();
 
 
-
-
+// server.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -157,13 +162,45 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares
-app.use(express.json());
-app.use(cors());
+// لو المشروع ورا Proxy (Railway عادةً)، مفيد تحط ده
+app.set('trust proxy', 1);
+
+// ======= CORS CONFIG =======
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENTURL || 'https://abdullah-wallet.netlify.app'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like Postman, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origin not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
+  credentials: true, // allow cookies / credentialed requests
+  optionsSuccessStatus: 200,
+};
+
+// For preflight OPTIONS requests on all routes
+app.options('*', cors(corsOptions));
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+// ============================
+
+// Security & logging & body parsing
 app.use(helmet());
 app.use(morgan('dev'));
+app.use(express.json({ limit: '5mb' }));
 
-// Health (قبل أي حاجة)
+// Health-check route (قبل أي حاجة)
 app.get('/health', (req, res) => {
   res.status(200).json({ ok: true });
 });
@@ -173,10 +210,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Port
-const PORT = process.env.PORT || 0;
+// Error handler for CORS origin rejected (optional nicer message)
+app.use((err, req, res, next) => {
+  if (err && err.message && err.message.includes('Origin not allowed')) {
+    return res.status(403).json({ error: 'CORS error: origin not allowed' });
+  }
+  next(err);
+});
 
-// Start server
+// Port
+const PORT = process.env.PORT || 5000;
+
 const startServer = async () => {
   try {
     console.log('Connecting to MongoDB...');
