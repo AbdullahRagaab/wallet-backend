@@ -174,7 +174,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Port
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 0;
 
 // Start server
 const startServer = async () => {
