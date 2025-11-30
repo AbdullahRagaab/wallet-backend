@@ -165,7 +165,7 @@ const app = express();
 // لو المشروع ورا Proxy (Railway عادةً)، مفيد تحط ده
 app.set('trust proxy', 1);
 
-// ======= CORS CONFIG =======
+// ======= CORS CONFIG
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.CLIENTURL || 'https://abdullah-wallet.netlify.app'
